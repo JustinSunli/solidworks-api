@@ -12,17 +12,33 @@ namespace SolidDna.WpfAddIn
         /// <summary>
         /// Specific application start-up code
         /// </summary>
-        /// <param name="solidWorks"></param>
-        public override void ApplicationStartup(SldWorks solidWorks)
+        public override void ApplicationStartup()
         {
 
+        }
+
+        /// <summary>
+        /// Steps to take before any add-ins load
+        /// </summary>
+        /// <returns></returns>
+        public override void PreLoadPlugIns()
+        {
+
+        }
+        public override void PreConnectToSolidWorks()
+        {
+            // NOTE: To run in our own AppDomain do the following
+            //       Be aware doing so sometimes causes API's to fail
+            //       when they try to load dll's
+            //
+            // PlugInIntegration.UseDetachedAppDomain = true;
         }
     }
 
     /// <summary>
-    /// My first SolidDna Plguin
+    /// My first SolidDna Plug-in
     /// </summary>
-    public class MySolidDnaPlguin : ISolidPlugIn
+    public class MySolidDnaPlguin : SolidPlugIn
     {
         #region Private Members
 
@@ -38,21 +54,21 @@ namespace SolidDna.WpfAddIn
         /// <summary>
         /// My Add-in description
         /// </summary>
-        public string AddInDescription {  get { return "My Addin Description"; } }
+        public override string AddInDescription => "My Addin Description";
 
         /// <summary>
         /// My Add-in title
         /// </summary>
-        public string AddInTitle { get { return "My Addin Title"; } }
+        public override string AddInTitle => "My Addin Title";
 
         #endregion
 
         #region Connect To SolidWorks
 
-        public void ConnectedToSolidWorks(SldWorks solidWorks)
+        public override void ConnectedToSolidWorks()
         {
             // Create our taskpane
-            mTaskpane = new TaskpaneIntegration<MyTaskpaneUI>(solidWorks)
+            mTaskpane = new TaskpaneIntegration<MyTaskpaneUI>()
             {
                 Icon = Path.Combine(PlugInIntegration.PlugInFolder, "logo-small.png"),
                 WpfControl = new MyAddinControl()
@@ -61,7 +77,7 @@ namespace SolidDna.WpfAddIn
             mTaskpane.AddToTaskpane();
         }
 
-        public void DisconnetedFromSolidWorks()
+        public override void DisconnectedFromSolidWorks()
         {
 
         }

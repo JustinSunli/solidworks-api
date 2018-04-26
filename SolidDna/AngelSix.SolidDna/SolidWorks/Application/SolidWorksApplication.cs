@@ -34,12 +34,21 @@ namespace AngelSix.SolidDna
 
         #endregion
 
+        #region Private members
+
+        /// <summary>
+        /// Locking object for synchronizing the disposing of SolidWorks and reloading active model info.
+        /// </summary>
+        private readonly object mDisposingLock = new object();
+
+        #endregion
+
         #region Public Properties
 
         /// <summary>
         /// The currently active model
         /// </summary>
-        public Model ActiveModel { get { return mActiveModel; } }
+        public Model ActiveModel => mActiveModel;
 
         /// <summary>
         /// Various preferences for SolidWorks
@@ -49,17 +58,22 @@ namespace AngelSix.SolidDna
         /// <summary>
         /// Gets the current SolidWorks version information
         /// </summary>
-        public SolidWorksVersion SolidWorksVersion {  get { return GetSolidWorksVersion(); } }
+        public SolidWorksVersion SolidWorksVersion => GetSolidWorksVersion();
 
         /// <summary>
         /// The SolidWorks instance cookie
         /// </summary>
-        public int SolidWorksCookie {  get { return mSwCookie; } }
+        public int SolidWorksCookie => mSwCookie;
 
         /// <summary>
         /// The command manager
         /// </summary>
         public CommandManager CommandManager { get; private set; }
+
+        /// <summary>
+        /// True if the application is disposing
+        /// </summary>
+        public bool Disposing { get; private set; }
 
         #endregion
 
@@ -90,7 +104,7 @@ namespace AngelSix.SolidDna
         public SolidWorksApplication(SldWorks solidWorks, int cookie) : base(solidWorks)
         {
             // Set preferences
-            this.Preferences = new SolidWorksPreferences();
+            Preferences = new SolidWorksPreferences();
 
             // Store cookie Id
             mSwCookie = cookie;
@@ -100,7 +114,7 @@ namespace AngelSix.SolidDna
             //         We then pass that into our domain
             //
             // Setup callback info
-            //var ok = mBaseObject.SetAddinCallbackInfo2(0, this, cookie);
+            // var ok = mBaseObject.SetAddinCallbackInfo2(0, this, cookie);
 
             // Hook into main events
             mBaseObject.ActiveModelDocChangeNotify += ActiveModelChanged;
@@ -108,10 +122,10 @@ namespace AngelSix.SolidDna
             mBaseObject.FileOpenPostNotify += FileOpenPostNotify;
 
             // Get command manager
-            this.CommandManager = new CommandManager(UnsafeObject.GetCommandManager(mSwCookie));
+            CommandManager = new CommandManager(UnsafeObject.GetCommandManager(mSwCookie));
 
             // Get whatever the current model is on load
-            this.ReloadActiveModelInformation();
+            ReloadActiveModelInformation();
         }
 
         #endregion
@@ -131,15 +145,9 @@ namespace AngelSix.SolidDna
                 var revisionNumber = mBaseObject.RevisionNumber();
 
                 // Get revision string (such as sw2015_SP20)
-                string revisionString;
-
                 // Get build number (such as d150130.002)
-                string buildNumber;
-
-                // Get the hotfix string
-                string hotfixString;
-
-                mBaseObject.GetBuildNumbers2(out revisionString, out buildNumber, out hotfixString);
+                // Get the hot fix string
+                mBaseObject.GetBuildNumbers2(out var revisionString, out var buildNumber, out var hotfixString);
 
                 return new SolidWorksVersion
                 {
@@ -178,10 +186,10 @@ namespace AngelSix.SolidDna
                     mFileLoading = null;
 
                     // And update all properties and models
-                    this.ReloadActiveModelInformation();
+                    ReloadActiveModelInformation();
 
                     // Inform listeners
-                    this.FileOpened(filename, mActiveModel);
+                    FileOpened(filename, mActiveModel);
                 }
 
             },
@@ -237,7 +245,7 @@ namespace AngelSix.SolidDna
                 // If we are currently loading a file...
                 if (mFileLoading != null)
                 {
-                    // Chcek the active document
+                    // Check the active document
                     using (var activeDoc = new Model((ModelDoc2)mBaseObject.ActiveDoc))
                     {
                         // If this is the same file that is currently being loaded, ignore this event
@@ -247,7 +255,7 @@ namespace AngelSix.SolidDna
                 }
 
                 // If we got here, it isn't the current document so reload the data
-                this.ReloadActiveModelInformation();
+                ReloadActiveModelInformation();
             },
                 SolidDnaErrorTypeCode.SolidWorksApplication,
                 SolidDnaErrorCode.SolidWorksApplicationActiveModelChangedError,
@@ -269,7 +277,7 @@ namespace AngelSix.SolidDna
         private void ReloadActiveModelInformation()
         {
             // First clean-up any previous SW data
-            this.CleanActiveModelData();
+            CleanActiveModelData();
 
             // Now get the new data
             if (mBaseObject.IActiveDoc2 == null)
@@ -319,27 +327,37 @@ namespace AngelSix.SolidDna
             // 
             //       So, each model that is closing (not closed) wait 200ms 
             //       then check on the current number of active documents
+            //       or if ActiveDoc is already set to null.
             //
-            //       If the document count is 0 at that moment in time
-            //       do an active model information refresh
+            //       If ActiveDoc is null or the document count is 0 at that 
+            //       moment in time, do an active model information refresh.
             //
             //       If another document opens in the meantime it won't fire
             //       but that's fine as the active doc changed event will fire
             //       in that case anyway
             //
-            //
 
-            // If we currently only have this one document open...
-            if (mBaseObject.GetDocumentCount() == 1)
-                Task.Run(async () =>
+            // Check for every file if it may have been the last one.
+            Task.Run(async () =>
+            {
+                // Wait for it to close
+                await Task.Delay(200);
+
+                // Lock to prevent Disposing to change while this section is running.
+                lock (mDisposingLock)
                 {
-                    // Wait for it to close
-                    await Task.Delay(200);
-
+                    if (Disposing)
+                        // If we are disposing SolidWorks, there is no need to reload active model info.
+                        return;
+                    
                     // Now if we have none open, reload information
-                    if (mBaseObject?.GetDocumentCount() == 0)
-                        this.ReloadActiveModelInformation();
-                });
+                    // ActiveDoc is quickly set to null after the last document is closed
+                    // GetDocumentCount takes longer to go to zero for big assemblies, but it might be a more reliable indicator.
+                    if (mBaseObject?.ActiveDoc == null || mBaseObject?.GetDocumentCount() == 0)
+                        ReloadActiveModelInformation();
+                    
+                }
+            });
         }
 
         /// <summary>
@@ -352,6 +370,23 @@ namespace AngelSix.SolidDna
         }
 
         #endregion
+
+        #endregion
+
+        #region Save Data
+
+        /// <summary>
+        /// Gets an <see cref="IExportPdfData"/> object for use with a <see cref="PdfExportData"/>
+        /// object used in <see cref="Model.SaveAs(string, SaveAsVersion, SaveAsOptions, PdfExportData)"/> call
+        /// </summary>
+        /// <returns></returns>
+        public IExportPdfData GetPdfExportData()
+        {
+            // NOTE: No point making our own enumerator for the export file type
+            //       as right now and for many years it's only ever been
+            //       1 for PDF. I do not see this ever changing
+            return mBaseObject.GetExportFileData((int)swExportDataFileType_e.swExportPdfData) as IExportPdfData;
+        }
 
         #endregion
 
@@ -511,7 +546,7 @@ namespace AngelSix.SolidDna
         /// </summary>
         /// <param name="iconPath">An absolute path to an icon to use for the taskpane (ideally 37x37px)</param>
         /// <param name="toolTip">The title text to show at the top of the taskpane</param>
-        public async Task<Taskpane> CreateTaskpane(string iconPath, string toolTip)
+        public async Task<Taskpane> CreateTaskpaneAsync(string iconPath, string toolTip)
         {
             // Wrap any error creating the taskpane in a SolidDna exception
             return SolidDnaErrors.Wrap<Taskpane>(() =>
@@ -554,14 +589,21 @@ namespace AngelSix.SolidDna
         /// </summary>
         public override void Dispose()
         {
-            // Clean active model
-            this.ActiveModel?.Dispose();
+            lock (mDisposingLock)
+            {
 
-            // Dispose command manager
-            this.CommandManager?.Dispose();
+                // Flag as disposing
+                Disposing = true;
 
-            // NOTE: Don't dispose the application, SolidWorks does that itself
-            //base.Dispose();
+                // Clean active model
+                ActiveModel?.Dispose();
+
+                // Dispose command manager
+                CommandManager?.Dispose();
+
+                // NOTE: Don't dispose the application, SolidWorks does that itself
+                //base.Dispose();
+            }
         }
 
         #endregion

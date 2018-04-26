@@ -1,7 +1,5 @@
 ﻿using AngelSix.SolidDna;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace SolidDna.Exporting
 {
@@ -23,10 +21,19 @@ namespace SolidDna.Exporting
         {
 
         }
+
+        public override void PreConnectToSolidWorks()
+        {
+            // NOTE: To run in our own AppDomain do the following
+            //       Be aware doing so sometimes causes API's to fail
+            //       when they try to load dll's
+            //
+            // PlugInIntegration.UseDetachedAppDomain = true;
+        }
     }
 
     /// <summary>
-    /// Register as SolidDna Plugin
+    /// Register as SolidDna Plug-in
     /// </summary>
     public class MySolidDnaPlugin : SolidPlugIn
     {
@@ -35,12 +42,12 @@ namespace SolidDna.Exporting
         /// <summary>
         /// My Add-in description
         /// </summary>
-        public override string AddInDescription {  get { return "An example of Command Items and exporting"; } }
+        public override string AddInDescription => "An example of Command Items and exporting";
 
         /// <summary>
         /// My Add-in title
         /// </summary>
-        public override string AddInTitle { get { return "SolidDNA Exporting"; } }
+        public override string AddInTitle => "SolidDNA Exporting";
 
         #endregion
 

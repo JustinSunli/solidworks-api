@@ -152,38 +152,41 @@ namespace AngelSix.SolidDna
         /// <summary>
         /// Default constructor
         /// </summary>
+        /// <param name="commandGroup">The SolidWorks command group</param>
+        /// <param name="items">The command items to add</param>
         /// <param name="userId">The unique Id this group was assigned with when created</param>
         /// <param name="title">The title</param>
-        /// <param name="items">The command items to add</param>
-        /// <param name="tooltip">The tool tip</param>
         /// <param name="hint">The hint</param>
-        public CommandManagerGroup(ICommandGroup commandGroup, List<CommandManagerItem> items, int userId, string title, string hint, string tooltip) : base(commandGroup)
+        /// <param name="tooltip">The tool tip</param>
+        /// <param name="hasMenu">Whether the CommandGroup should appear in the Tools dropdown menu.</param>
+        /// <param name="hasToolbar">Whether the CommandGroup should appear in the Command Manager and as a separate toolbar.</param>
+        public CommandManagerGroup(ICommandGroup commandGroup, List<CommandManagerItem> items, int userId, string title, string hint, string tooltip, bool hasMenu, bool hasToolbar) : base(commandGroup)
         {
             // Store user Id, used to remove the command group
-            this.UserId = userId;
+            UserId = userId;
 
             // Set items
-            this.Items = items;
+            Items = items;
 
             // Set title
-            this.Title = title;
+            Title = title;
 
             // Set hint
-            this.Hint = hint;
+            Hint = hint;
 
             // Set tooltip
-            this.Tooltip = tooltip;
+            Tooltip = tooltip;
 
             // Set defaults
 
             // Show for all types
-            this.MenuVisibleInDocumentTypes = ModelTemplateType.Assembly | ModelTemplateType.Part | ModelTemplateType.Drawing;
+            MenuVisibleInDocumentTypes = ModelTemplateType.Assembly | ModelTemplateType.Part | ModelTemplateType.Drawing;
 
             // Have a menu
-            this.HasMenu = true;
+            HasMenu = hasMenu;
 
             // Have a toolbar
-            this.HasToolbar = true;
+            HasToolbar = hasToolbar;
 
             // Listen out for callbacks
             PlugInIntegration.CallbackFired += PlugInIntegration_CallbackFired;
@@ -296,7 +299,7 @@ namespace AngelSix.SolidDna
         private void PlugInIntegration_CallbackFired(string name)
         {
             // Find the item, if any
-            var item = this.Items.FirstOrDefault(f => f.CallbackId == name);
+            var item = Items.FirstOrDefault(f => f.CallbackId == name);
 
             // Call the action
             item?.OnClick?.Invoke();
@@ -313,7 +316,7 @@ namespace AngelSix.SolidDna
         public void AddCommandItem(CommandManagerItem item)
         {
             // Add the item
-            var id = mBaseObject.AddCommandItem2(item.Name, item.Position, item.Hint, item.Tooltip, item.ImageIndex, $"Callback({item.CallbackId})", null, this.UserId, (int)item.ItemType);
+            var id = mBaseObject.AddCommandItem2(item.Name, item.Position, item.Hint, item.Tooltip, item.ImageIndex, $"Callback({item.CallbackId})", null, UserId, (int)item.ItemType);
 
             // Set the Id we got
             item.UniqueId = id;
@@ -370,7 +373,7 @@ namespace AngelSix.SolidDna
             #region Add Items
 
             // Add items
-            this.Items?.ForEach(item => AddCommandItem(item));
+            Items?.ForEach(item => AddCommandItem(item));
 
             #endregion
 
@@ -378,22 +381,22 @@ namespace AngelSix.SolidDna
             mCreated = mBaseObject.Activate();
 
             // Get command Ids
-            this.Items?.ForEach(item => item.CommandId = mBaseObject.CommandID[item.UniqueId]);
+            Items?.ForEach(item => item.CommandId = mBaseObject.CommandID[item.UniqueId]);
 
             #region Command Tab
 
             // Add to parts tab
-            var list = this.Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForParts).ToList();
+            var list = Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForParts).ToList();
             if (list?.Count > 0)
                 AddItemsToTab(ModelType.Part, manager, list);
 
             // Add to assembly tab
-            list = this.Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForAssemblies).ToList();
+            list = Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForAssemblies).ToList();
             if (list?.Count > 0)
                 AddItemsToTab(ModelType.Assembly, manager, list);
 
             // Add to drawing tab
-            list = this.Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForDrawings).ToList();
+            list = Items.Where(f => f.TabView != CommandManagerItemTabView.None && f.VisibleForDrawings).ToList();
             if (list?.Count > 0)
                 AddItemsToTab(ModelType.Drawing, manager, list);
 
@@ -417,7 +420,7 @@ namespace AngelSix.SolidDna
         {
             // Use default title if not specified
             if (string.IsNullOrEmpty(title))
-                title = this.Title;
+                title = Title;
 
             CommandManagerTab tab = null;
 

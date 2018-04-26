@@ -23,10 +23,19 @@ namespace SolidDna.CustomProperties
         {
 
         }
+
+        public override void PreConnectToSolidWorks()
+        {
+            // NOTE: To run in our own AppDomain do the following
+            //       Be aware doing so sometimes causes API's to fail
+            //       when they try to load dll's
+            //
+            // PlugInIntegration.UseDetachedAppDomain = true;
+        }
     }
 
     /// <summary>
-    /// Register as SolidDna Plguin
+    /// Register as SolidDna Plugin
     /// </summary>
     public class CustomPropertiesSolidDnaPlugin : SolidPlugIn
     {
@@ -68,7 +77,7 @@ namespace SolidDna.CustomProperties
             mTaskpane.AddToTaskpane();
         }
 
-        public override void DisconnetedFromSolidWorks()
+        public override void DisconnectedFromSolidWorks()
         {
 
         }

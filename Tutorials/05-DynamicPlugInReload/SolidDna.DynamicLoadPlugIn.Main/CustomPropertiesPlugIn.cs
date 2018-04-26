@@ -4,7 +4,7 @@ using System.IO;
 namespace SolidDna.DynamicLoadPlugIn
 {
     /// <summary>
-    /// Register as SolidDna Plguin
+    /// Register as SolidDna Plugin
     /// </summary>
     public class CustomPropertiesSolidDnaPlugin : SolidPlugIn
     {
@@ -22,12 +22,12 @@ namespace SolidDna.DynamicLoadPlugIn
         /// <summary>
         /// My Add-in description
         /// </summary> 
-        public override string AddInDescription { get { return "An example of editing a plug-in with SolidWorks still running"; } }
+        public override string AddInDescription => "An example of editing a plug-in with SolidWorks still running";
 
         /// <summary>
         /// My Add-in title
         /// </summary>
-        public override string AddInTitle { get { return "SolidDNA Dynamic Load PlugIn"; } }
+        public override string AddInTitle => "SolidDNA Dynamic Load PlugIn";
 
         #endregion
 
@@ -46,7 +46,7 @@ namespace SolidDna.DynamicLoadPlugIn
             mTaskpane.AddToTaskpane();
         }
 
-        public override void DisconnetedFromSolidWorks()
+        public override void DisconnectedFromSolidWorks()
         {
 
         }

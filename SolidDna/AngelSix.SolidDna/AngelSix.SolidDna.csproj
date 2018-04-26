@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>AngelSix.SolidDna</RootNamespace>
     <AssemblyName>AngelSix.SolidDna</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -30,10 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ninject, Version=3.2.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\..\Tutorials\03-SolidDna-CustomProperties\SolidDna.CustomProperties\packages\Ninject.3.2.2.0\lib\net45-full\Ninject.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
+    <PackageReference Include="Ninject" Version="3.3.1" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="SolidWorks.Interop.sldworks, Version=24.3.0.57, Culture=neutral, PublicKeyToken=7c4797c3e4eeac03, processorArchitecture=MSIL">
@@ -97,6 +95,7 @@
     <Compile Include="DependencyInjection\Interfaces\Localization\ILocalizationManager.cs" />
     <Compile Include="DependencyInjection\Interfaces\Localization\IResourceFormatProvider.cs" />
     <Compile Include="DependencyInjection\IoCContainer.cs" />
+    <Compile Include="Enumerators\EnumHelpers.cs" />
     <Compile Include="Errors\SolidDnaError.cs" />
     <Compile Include="Errors\SolidDnaErrorCode.cs" />
     <Compile Include="Errors\SolidDnaErrors.cs" />
@@ -289,6 +288,13 @@
     <Compile Include="SolidWorks\Models\Configuration\ModelConfiguration.cs" />
     <Compile Include="SolidWorks\Models\ModelTemplateType.cs" />
     <Compile Include="SolidWorks\Models\ModelType.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Results\ModelSaveResult.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Pdf\PdfExportData.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Options\SaveAsOptions.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Options\SaveAsVersion.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Pdf\PdfSheetsToExport.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Results\SaveAsErrors.cs" />
+    <Compile Include="SolidWorks\Models\Saving\Results\SaveAsWarnings.cs" />
     <Compile Include="SolidWorks\Models\SelectionManager\ModelSelectionManager.cs" />
     <Compile Include="SolidWorks\Models\SelectedObject.cs" />
     <Compile Include="SolidWorks\SolidDnaEnvironment.cs" />
@@ -297,12 +303,13 @@
     <Compile Include="Threading\ThreadHelpers.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <EmbeddedResource Include="Localization\Strings\Strings%28en-US%29.xml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Localization\Strings\Strings%28en-US%29.xml" />
+    <None Include="AngelSix.SolidDna.csproj.vsspell" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
